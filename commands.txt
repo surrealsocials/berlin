@@ -1,0 +1,302 @@
+# get static folder anf fill it 
+python manage.py collect static
+
+
+### uvicorn
+# this needs to be run from your project directory 
+uvicorn myproject.asgi:application --host 127.0.0.1 --port 8000 
+uvicorn newsmedia.asgi:application --host 127.0.0.1 --port 8000
+#--reload
+gunicorn myproject.asgi:application --bind 127.0.0.1:8000
+
+import os
+
+pids=[20204,2232]
+for i in pids:
+	os.system(f'taskkill /pid {i} /f')
+
+uvicorn myproject.asgi:application --host 0.0.0.0 --port 8000 --static-dir C:/Projects/berindjango/berlin/
+uvicorn newsapp:app --host 0.0.0.0 --port 8000 --static-dir /path/to/static/files
+netstat -ano | findstr :8000
+
+Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+netsh int ipv4 reset reset.txt
+netstat -ano | findstr :8000
+
+
+###################################################
+#
+## gunicorn
+# check running
+pgrep -f "gunicorn"
+
+# start
+gunicorn newsmedia.wsgi:application --bind 0.0.0.0:8000
+uvicorn newsmedia.asgi:application --host 0.0.0.0 --port 8000
+sudo nohup gunicorn newsmedia.wsgi:application --bind 0.0.0.0:8000 &
+
+# stop
+ps aux | grep gunicorn
+kill <pid>
+pkill gunicorn
+
+# uvicorn
+pgrep -f "uvicorn"
+
+# screen
+pkill -f "nohup"
+pkill screen
+
+# windows kill
+powershell -command "Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"
+
+# windows start with venv too
+cd berlinvenv/Scripts & activate & cd ../.. & taskkill /f /im uvicorn.exe & uvicorn myproject.asgi:application --host 127.0.0.1 --port 8000
+
+# manage.py 
+if __name__ == '__main__':
+    if sys.argv[1]=='run':
+        os.system('powershell -command "Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"')
+        os.system('cd berlinvenv/Scripts & activate & cd ../.. & taskkill /f /im uvicorn.exe & uvicorn myproject.asgi:application --host 127.0.0.1 --port 8000')
+        exit()
+    elif sys.argv[1]=='stop':
+        os.system('powershell -command "Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"')
+        exit()
+
+    try: 
+        print(sys.argv[1])
+        main()
+    except:
+        os.system('powershell -command "Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"')
+        os.system('cd berlinvenv/Scripts & activate & cd ../.. & taskkill /f /im uvicorn.exe & uvicorn myproject.asgi:application --host 127.0.0.1 --port 8000')
+
+
+##################
+## nginx 
+# link
+sudo ln -s /etc/nginx/sites-available/your_django_site.conf /etc/nginx/sites-enabled/
+
+# install
+sudo yum install nginx
+
+# start
+systemctl start nginx 
+sudo systemctl restart nginx
+
+
+# stop
+systemctl stop nginx
+pkill nginx
+nginx -s stop
+tasklist /fi "imagename eq nginx*"
+taskkill /pid <Nginx_PID> /f
+
+
+# status 
+sudo systemctl status nginx
+sudo nginx -t
+sudo ss -tuln 'sport = :80'
+
+# conf
+    server {
+		listen       80;
+		server_name  3.88.181.37;
+		root         /usr/share/nginx/html;
+
+		include /etc/nginx/default.d/*.conf;
+
+		error_page 404 /404.html;
+		location = /404.html {
+		}
+
+		location = /test.html {
+		        root /media;
+		}
+		location / {
+		        proxy_pass http://127.0.0.1:8000;
+		        proxy_set_header Host $host;
+		        proxy_set_header X-Real-IP $remote_addr;
+		}
+
+
+sudo systemctl start nginx  
+sudo systemctl stop nginx
+
+
+##########################
+## SSL
+sudo yum install openssl
+/etc/nginx/ssl
+
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout server.key -out server.crt
+openssl s_client -connect 3.88.181.37:443
+
+openssl genpkey -algorithm RSA -out private-key.key
+openssl req -new -key private-key.key -out certificate.csr
+openssl x509 -req -days 365 -in certificate.csr -signkey private-key.key -out certificate.crt
+
+#? yum install httpd mod_ssl -y
+
+# worked
+sudo yum install firewalld
+sudo systemctl enable firewalld
+sudo systemctl start firewalld
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+
+## for django 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#not for me -  SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+
+## havent tried below vv
+  server {
+    listen 80;
+    server_name 3.88.181.37;
+    return 301 https://$host$request_uri;
+  }
+### ^^
+
+# nginx.conf
+## this works for sure 
+
+# do this first 
+
+ server {
+    listen 80
+    server_name 3.88.181.37;  # put the right config in
+
+    # Load configuration files for the default server block.
+    include /etc/nginx/default.d/*.conf;
+
+    error_page 404 /404.html;
+    location = /404.html {
+    }
+
+    location = /test.html {
+      root /media;
+    }
+
+    location /static {
+      alias /media;
+    }
+
+    location / {
+      proxy_pass http://127.0.0.1:8000;  # Assuming your Django app runs on port 8000
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+    }
+  }
+
+
+  server {
+  	listen 80
+    listen 443 ssl;
+    server_name 3.88.181.37;
+    listen       443 ssl http2;
+    listen       [::]:443 ssl http2;
+
+    ssl_certificate /etc/letsencrypt/live/newsmediaaustralia.hopto.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/newsmediaaustralia.hopto.org/privkey.pem;
+  	ssl_session_cache shared:SSL:1m;
+  	ssl_session_timeout  10m;
+  	ssl_ciphers PROFILE=SYSTEM;
+  	ssl_prefer_server_ciphers on;
+
+  	ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+	ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Load configuration files for the default server block.
+    include /etc/nginx/default.d/*.conf;
+
+    error_page 404 /404.html;
+    location = /404.html {
+    }
+
+    location = /test.html {
+      root /media;
+    }
+
+    location /static {
+      alias /media;
+    }
+
+    location / {
+      proxy_pass http://127.0.0.1:8000;  # Assuming your Django app runs on port 8000
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+    }
+  }
+
+########
+
+# worked
+sudo yum install firewalld
+sudo systemctl enable firewalld
+sudo systemctl start firewalld
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+
+pip install certbot
+pip install certbot-nginx
+sudo certbot certonly --nginx -d newsmediaaustralia.hopto.org
+
+# https://my.noip.com/ > 
+newsmediaaustralia.hopto.org
+
+ssl_certificate /etc/letsencrypt/live/newsmediaaustralia.hopto.org/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/newsmediaaustralia.hopto.org/privkey.pem;
+
+# mail
+
+newsmediaaustralia@gmx.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Settings for a TLS enabled server.
+#
+    server {
+        listen       443 ssl http2;
+        listen       [::]:443 ssl http2;
+        server_name  3.88.181.37;
+        root         /usr/share/nginx/html;
+
+        ssl_certificate "/etc/pki/nginx/server.crt";
+        ssl_certificate_key "/etc/pki/nginx/private/server.key";
+        ssl_session_cache shared:SSL:1m;
+        ssl_session_timeout  10m;
+        ssl_ciphers PROFILE=SYSTEM;
+        ssl_prefer_server_ciphers on;
+
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+
+        error_page 404 /404.html;
+        location = /404.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+        }
+    }
+
+    ec2-3-88-181-37.compute-1.amazonaws.com

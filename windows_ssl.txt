@@ -1,0 +1,52 @@
+windows SSL
+
+# C://src/nginx/ssl
+openssl genpkey -algorithm RSA -out private-key.key
+openssl req -new -key private-key.key -out certificate.csr
+openssl x509 -req -days 365 -in certificate.csr -signkey private-key.key -out certificate.crt
+
+# for nginx conf
+ssl_certificate C://src/nginx-1.25.1/ssl/certificate.crt;
+ssl_certificate_key C://src/nginx-1.25.1/ssl/private-key.key;
+
+
+worker_processes 1;
+events {
+	worker_connections  1024;
+}
+
+http {
+	include mime.types;
+	default_type application/octet-stream;
+	sendfile on;
+	keepalive_timeout 65;
+
+	server {
+		listen	     443 ssl;
+		server_name  localhost;
+		
+		ssl_certificate C://src/nginx-1.25.1/ssl/certificate.crt;
+		ssl_certificate_key C://src/nginx-1.25.1/ssl/private-key.key;
+
+		ssl_protocols       TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+		ssl_ciphers         HIGH:!aNULL:!MD5;
+
+
+		location / {
+			proxy_pass http://127.0.0.1:8000;
+			proxy_set_header Host $host;
+			proxy_set_header X-Real-IP $remote_addr;
+			index  index.html index.htm;
+		}
+		
+		location /static {
+			alias C:/Projects/berindjango/berlin/static;
+		}
+
+		error_page   500 502 503 504  /50x.html;
+
+		location = /error.html {
+			root C:/Projects/berindjango/berlin/static/error;
+		}
+	}
+}
